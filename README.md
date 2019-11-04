@@ -20,3 +20,12 @@ Also, I add the routines to obtain the confidence interval from the Hessian matr
 ---
 ## License:
 
+---
+
+### Debug
+
+Some warnings appears when we try to check errors on this code. But, it is only warnings:
+
+1. warning in "tobit.py": **No name 'log_ndtr' in module 'scipy.special'**
+    
+    - **Source**: https://github.com/PyCQA/pylint/issues/2742
