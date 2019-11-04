@@ -136,21 +136,22 @@ class apply_models(object):
             
         model = TobitModel()
         
+        y_fit = np.log(self.data[self.column_y])
+        
         #garantir que sejam floats
-        self.data[self.column_y] = self.data[self.column_y].astype(float)
-        self.data[self.censura] = self.data[self.censura].astype(float)
+        self.data[self.column_y] = pd.to_numeric(self.data[self.column_y],errors='coerce')
+        self.data[self.censura] = pd.to_numeric(self.data[self.censura],errors='coerce')
         self.limit_inferior = float(self.limit_inferior)
 
         censura_sup = self.data[self.column_y] > self.data[self.censura]
-        # print(censura_sup)
         censura_inf = self.data[self.column_y] < self.limit_inferior
         
         y_cens = np.zeros(self.data.shape[0])
         y_cens[censura_sup] =  1
         y_cens[censura_inf] = -1
-        self.data['censura_fit'] = y_cens
+        self.data['censura'] = y_cens
         
-        result = model.fit( x=self.X.astype(float), y=self.data[self.column_y], cens=self.data['censura_fit'].astype(int), verbose=False)
+        result = model.fit( x=self.X.astype(float), y=y_fit, cens=self.data['censura'], verbose=False)
         
         self.fit_tobit_predictions = result.predict(self.X.astype(float))
 
@@ -158,15 +159,14 @@ class apply_models(object):
     
     def apply_OLS(self,):
         
-        #y_fit = np.log(self.data[self.column_y])
+        y_fit = np.log(self.data[self.column_y])
         
         if not hasattr(self, 'X'):
             self.create_X_variables()
         
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            self.data[self.column_y] = pd.to_numeric(self.data[self.column_y],errors='coerce')
-            model = sm.OLS(self.data[self.column_y], self.X.astype(float)).fit()
+            model = sm.OLS(y_fit, self.X.astype(float)).fit()
             predictions = model.predict(self.X.astype(float))
             print_model = model.summary()
             prstd, iv_l, iv_u = wls_prediction_std(model)
@@ -207,9 +207,9 @@ class apply_models(object):
             self.solucao_ols_iv_u = pd.Series(iv_u)
             self.resultado_ols = pd.concat([self.X2predict,self.solucao_ols_iv_l,self.solucao_ols,self.solucao_ols_iv_u],axis=1)
             self.resultado_ols.columns = self.cols_numeric+self.cols_dummies+['ref_ols_min', 'ref_ols', 'ref_ols_max']
-            # self.resultado_ols["ref_ols_min"] = self.resultado_ols["ref_ols_min"].apply(lambda x: x)
-            # self.resultado_ols["ref_ols"] = self.resultado_ols["ref_ols"].apply(lambda x: x)
-            # self.resultado_ols["ref_ols_max"] = self.resultado_ols["ref_ols_max"].apply(lambda x: np.exp(x))
+            self.resultado_ols["ref_ols_min"] = self.resultado_ols["ref_ols_min"].apply(lambda x: np.exp(x))
+            self.resultado_ols["ref_ols"] = self.resultado_ols["ref_ols"].apply(lambda x: np.exp(x))
+            self.resultado_ols["ref_ols_max"] = self.resultado_ols["ref_ols_max"].apply(lambda x: np.exp(x))
             self.resultado_ols["amplitude_ols"] = (self.resultado_ols["ref_ols_max"] - self.resultado_ols["ref_ols_min"])/self.resultado_ols["ref_ols_min"]
 
         elif mode == 'tobit':
@@ -223,7 +223,7 @@ class apply_models(object):
             self.fit_tobit_coef_err = pd.Series(coef_uncertains[1])
             self.resultado_tobit = pd.concat([self.X2predict,self.solucao_tobit_iv_l,self.solucao_tobit,self.solucao_tobit_iv_u],axis=1)
             self.resultado_tobit.columns = self.cols_numeric+self.cols_dummies+['ref_tobit_min', 'ref_tobit', 'ref_tobit_max']
-            # self.resultado_tobit["ref_tobit_min"] = self.resultado_tobit["ref_tobit_min"].apply(lambda x: np.exp(x))
-            # self.resultado_tobit["ref_tobit"] = self.resultado_tobit["ref_tobit"].apply(lambda x: np.exp(x))
-            # self.resultado_tobit["ref_tobit_max"] = self.resultado_tobit["ref_tobit_max"].apply(lambda x: np.exp(x))
+            self.resultado_tobit["ref_tobit_min"] = self.resultado_tobit["ref_tobit_min"].apply(lambda x: np.exp(x))
+            self.resultado_tobit["ref_tobit"] = self.resultado_tobit["ref_tobit"].apply(lambda x: np.exp(x))
+            self.resultado_tobit["ref_tobit_max"] = self.resultado_tobit["ref_tobit_max"].apply(lambda x: np.exp(x))
             self.resultado_tobit["amplitude_tobit"] = (self.resultado_tobit["ref_tobit_max"] - self.resultado_tobit["ref_tobit_min"])/self.resultado_tobit["ref_tobit_min"]

@@ -18,7 +18,11 @@ I use the tobit likelihood and its seconde derivate from James Jensen, https://g
 Also, I add the routines to obtain the confidence interval from the Hessian matrix that came from scipy.optimize, which gave to us the maximum and minimum limits for our model.
 
 ---
-## License:
+## Problems:
+
+- tobit does not understand the values to censur when use apply_model from use.py
+
+- it seems to have a problem how I include some dummie function on the problem.
 
 ---
 
